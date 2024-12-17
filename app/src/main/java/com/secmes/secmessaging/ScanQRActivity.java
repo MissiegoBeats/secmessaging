@@ -1,35 +1,61 @@
 package com.secmes.secmessaging;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+
+import com.journeyapps.barcodescanner.CaptureActivity;
 
 public class ScanQRActivity extends AppCompatActivity {
+
+    private TextView resultTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        new IntentIntegrator(this).initiateScan(); // Inicia el escaneo del QR
+        setContentView(R.layout.activity_scan_qr);
+
+        resultTextView = findViewById(R.id.resultTextView);
+
+        // Configura el escáner de código QR
+        initiateBarcodeScanner();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    private void initiateBarcodeScanner() {
+        // Usamos la API de ML Kit Barcode Scanning para escanear códigos QR
+        BarcodeScanner barcodeScanner = BarcodeScanning.getClient();
 
-        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (result != null) {
-            if (result.getContents() != null) {
-                String scannedPublicKey = result.getContents();
-                // Aquí procesamos la clave pública recibida
-                Intent intent = new Intent(this, ChatActivity.class);
-                intent.putExtra("publicKey", scannedPublicKey);
-                startActivity(intent);
+        // Iniciamos la actividad para escanear el código QR
+        registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+            @Override
+            public void onActivityResult(ActivityResult result) {
+                if (result.getResultCode() == RESULT_OK) {
+                    String qrContent = result.getData().getStringExtra("QR_CODE_RESULT");
+                    Toast.makeText(ScanQRActivity.this, qrContent, Toast.LENGTH_SHORT).show();
+                    processQRContent(qrContent);
+                }
             }
+        }).launch(new Intent(this, CaptureActivity.class));
+    }
+
+    private void processQRContent(String qrContent) {
+        if (qrContent != null) {
+            String[] parts = qrContent.split(";");
+            String ipAddress = parts[0];  // IP del otro dispositivo
+            String publicKey = parts[1];  // Clave pública RSA
+
+            // Aquí podrías establecer la conexión y empezar a enviar mensajes
+            resultTextView.setText("IP: " + ipAddress + "\nClave pública: " + publicKey);
         }
     }
 }

@@ -8,18 +8,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
-import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PublicKey;
-import java.util.Base64;
+import java.util.Collections;
 
 public class GenerateQRActivity extends AppCompatActivity {
 
     private ImageView qrImageView;
-    private PublicKey publicKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,22 +28,38 @@ public class GenerateQRActivity extends AppCompatActivity {
         qrImageView = findViewById(R.id.qrImageView);
 
         try {
-            KeyPair keyPair = generateKeyPair();
-            publicKey = keyPair.getPublic();
+            // Obtener la IP local del dispositivo
+            String ipAddress = getLocalIpAddress();
 
-            String publicKeyString = Base64.getEncoder().encodeToString(publicKey.getEncoded());
-            Bitmap qrBitmap = generateQRCode(publicKeyString);
-            qrImageView.setImageBitmap(qrBitmap);
+            // Generar un par de claves RSA
+            KeyPair keyPair = RSAUtils.generateKeyPair();
+            String publicKey = RSAUtils.getPublicKeyString(keyPair.getPublic());
+
+            // Contenido del QR: IP + clave pública
+            String qrContent = ipAddress + ";" + publicKey;
+
+            // Generar el QR
+            Bitmap qrCode = generateQRCode(qrContent);
+            qrImageView.setImageBitmap(qrCode);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private KeyPair generateKeyPair() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(2048);
-        return keyGen.generateKeyPair();
+    private String getLocalIpAddress() {
+        try {
+            for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                for (InetAddress inetAddress : Collections.list(networkInterface.getInetAddresses())) {
+                    if (!inetAddress.isLoopbackAddress()) {
+                        return inetAddress.getHostAddress();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private Bitmap generateQRCode(String data) throws WriterException {

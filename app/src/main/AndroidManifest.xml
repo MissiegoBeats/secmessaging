@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:ignore="CoarseFineLocation" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,20 +22,31 @@
         android:theme="@style/Theme.SecMessaging"
         tools:targetApi="31">
 
-        <!-- Actividad principal -->
-        <activity android:name=".MainActivity"
-            android:exported="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="Secure Chat"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Declaración de GenerateQRActivity -->
-        <activity android:name=".GenerateQRActivity" />
-        <!-- Declaración de otras actividades -->
-        <activity android:name=".ScanQRActivity" />
-        <activity android:name=".ChatActivity" />
+        <activity
+            android:name=".GenerateQRActivity"
+            android:label="Generar QR"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ScanQRActivity"
+            android:label="Escanear QR"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ChatActivity"
+            android:label="Chat"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
 
     </application>
 

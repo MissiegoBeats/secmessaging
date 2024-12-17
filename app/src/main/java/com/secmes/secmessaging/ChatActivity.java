@@ -1,76 +1,56 @@
 package com.secmes.secmessaging;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.Base64;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
+import java.net.Socket;
 import javax.crypto.SecretKey;
 
 public class ChatActivity extends AppCompatActivity {
 
-    private TextView chatTitle;
+    private TextView chatView;
     private EditText messageInput;
     private Button sendButton;
-    private DatabaseReference database;
-    private SecretKey secretKey;
+
+    private Socket socket;
+    private SecretKey aesKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        chatTitle = findViewById(R.id.chatTitle);
+        chatView = findViewById(R.id.chatView);
         messageInput = findViewById(R.id.messageInput);
         sendButton = findViewById(R.id.sendButton);
 
-        database = FirebaseDatabase.getInstance().getReference("chats");
+        String ipAddress = getIntent().getStringExtra("ipAddress");
+        String publicKey = getIntent().getStringExtra("publicKey");
 
-        String publicKeyString = getIntent().getStringExtra("publicKey");
-        String chatName = "Chat Seguro";
-
-        chatTitle.setText(chatName);
-
-        try {
-            secretKey = generateSecretKey();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // Conectar con el otro dispositivo (esto puede usar la IP y la clave pública)
+        // Establecer una conexión TCP o usar otro protocolo según lo necesites
 
         sendButton.setOnClickListener(v -> {
-            try {
-                String message = messageInput.getText().toString();
-                String encryptedMessage = encryptMessage(message, secretKey);
-                sendMessage(chatName, encryptedMessage);
-            } catch (Exception e) {
-                e.printStackTrace();
+            String message = messageInput.getText().toString();
+            if (!message.isEmpty()) {
+                // Enviar el mensaje cifrado con AES
+                sendMessage(message);
+                chatView.append("Tú: " + message + "\n");
+                messageInput.setText("");
             }
         });
     }
 
-    private SecretKey generateSecretKey() throws Exception {
-        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-        keyGenerator.init(128);
-        return keyGenerator.generateKey();
+    private void sendMessage(String message) {
+        // Enviar el mensaje cifrado
     }
 
-    private String encryptMessage(String message, SecretKey key) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] encryptedBytes = cipher.doFinal(message.getBytes());
-        return Base64.getEncoder().encodeToString(encryptedBytes);
-    }
-
-    private void sendMessage(String chatId, String encryptedMessage) {
-        database.child(chatId).push().setValue(encryptedMessage);
+    private void receiveMessage(String message) {
+        chatView.append("Amigo: " + message + "\n");
     }
 }
