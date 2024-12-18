@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-12-18T09:12:28.381404800Z">
+        <DropdownSelection timestamp="2024-12-18T09:25:18.233262500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=1543639360009G2" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=RFCX816HDVR" />
             </handle>
           </Target>
         </DropdownSelection>
