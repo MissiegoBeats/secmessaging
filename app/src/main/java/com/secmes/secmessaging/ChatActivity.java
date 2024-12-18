@@ -7,7 +7,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ChatActivity extends AppCompatActivity {
@@ -50,13 +54,7 @@ public class ChatActivity extends AppCompatActivity {
             finish();
         }
 
-        // Configurar el botón para enviar el mensaje
-        sendButton.setOnClickListener(view -> {
-            String message = messageInput.getText().toString();
-            if (!message.isEmpty()) {
-                sendMessage(message);
-            }
-        });
+        // No necesitamos funcionalidad para enviar mensajes en este paso, solo nos enfocamos en las claves públicas
     }
 
     private void establishConnection() {
@@ -65,6 +63,9 @@ public class ChatActivity extends AppCompatActivity {
             try {
                 socket = new Socket(recipientIp, recipientPort);
                 runOnUiThread(() -> Toast.makeText(ChatActivity.this, "Conexión establecida", Toast.LENGTH_SHORT).show());
+
+                // Enviar la clave pública del escaneador al receptor para que pueda cifrar los mensajes hacia el escaneador
+                sendPublicKey();
 
                 // Ahora, la conexión está establecida, esperamos mensajes
                 receiveMessages();
@@ -75,24 +76,19 @@ public class ChatActivity extends AppCompatActivity {
         }).start();
     }
 
-    private void sendMessage(String message) {
+    private void sendPublicKey() {
         new Thread(() -> {
             try {
-                // Cifrar el mensaje antes de enviarlo usando la clave pública del destinatario
-                String encryptedMessage = RSAUtils.encrypt(message, recipientPublicKey); // Enviar mensaje cifrado
+                // Enviar la clave pública del dispositivo que escaneó el QR al receptor (se utiliza la conexión establecida)
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                writer.println("PUBLIC_KEY:" + myPublicKey);  // Enviar la clave pública de A con un prefijo para identificarla
+                writer.flush();  // Asegurar que se envíe la clave pública
 
-                // Enviar el mensaje a través de la conexión
-                socket.getOutputStream().write(encryptedMessage.getBytes());
-
-                // Mostrar el mensaje enviado en el chat
-                runOnUiThread(() -> chatView.append("Yo: " + message + "\n"));
-
-                // Limpiar el campo de entrada
-                runOnUiThread(() -> messageInput.setText(""));
-
+                // Mostrar el mensaje en el chat
+                runOnUiThread(() -> chatView.append("Yo: He enviado mi clave pública.\n"));
             } catch (IOException e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(ChatActivity.this, "Error al enviar mensaje", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(ChatActivity.this, "Error al enviar clave pública", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
@@ -100,17 +96,20 @@ public class ChatActivity extends AppCompatActivity {
     private void receiveMessages() {
         new Thread(() -> {
             try {
-                byte[] buffer = new byte[1024];
+                // Usar BufferedReader para leer los mensajes entrantes
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                String incomingMessage;
                 while (true) {
-                    int bytesRead = socket.getInputStream().read(buffer);
-                    if (bytesRead != -1) {
-                        String encryptedMessage = new String(buffer, 0, bytesRead);
+                    // Leer mensaje de forma continua
+                    incomingMessage = reader.readLine();
 
-                        // Descifrar el mensaje recibido utilizando la clave privada local
-                        String decryptedMessage = RSAUtils.decrypt(encryptedMessage, myPrivateKey);
-
-                        // Mostrar el mensaje en el chat
-                        runOnUiThread(() -> chatView.append("Amigo: " + decryptedMessage + "\n"));
+                    if (incomingMessage != null) {
+                        if (incomingMessage.startsWith("PUBLIC_KEY:")) {
+                            // Si el mensaje recibido es la clave pública del otro dispositivo
+                            recipientPublicKey = incomingMessage.substring("PUBLIC_KEY:".length());
+                            runOnUiThread(() -> chatView.append("He recibido la clave pública de mi amigo.\n"));
+                        }
                     }
                 }
             } catch (IOException e) {
