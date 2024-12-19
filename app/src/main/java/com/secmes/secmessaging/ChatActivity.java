@@ -114,11 +114,15 @@ public class ChatActivity extends AppCompatActivity {
 
     private void createClientSocket() {
         new Thread(() -> {
-            try {
-                Socket socket = new Socket(recipientIp, CLIENT_PORT);
-                out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-            } catch (IOException e) {
-                e.printStackTrace();
+            boolean keepTryingConnection = true;
+            while(keepTryingConnection) {
+                try {
+                    Socket socket = new Socket(recipientIp, CLIENT_PORT);
+                    out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+                    keepTryingConnection = false;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
