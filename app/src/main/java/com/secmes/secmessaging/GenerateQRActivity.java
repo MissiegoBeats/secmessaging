@@ -202,4 +202,16 @@ public class GenerateQRActivity extends AppCompatActivity {
                 ((ipAddressInt >> 16) & 0xFF) + "." +
                 ((ipAddressInt >> 24) & 0xFF);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
