@@ -124,6 +124,7 @@ public class ScanQRActivity extends AppCompatActivity {
                         Intent intent = new Intent(ScanQRActivity.this, ChatActivity.class);
                         intent.putExtra("IP", ipAddress); // Pasar la IP del cliente
                         intent.putExtra("PublicKey", publicKey);
+                        intent.putExtra("PORT", 49152);
                         startActivity(intent);
 
                     } catch (IOException e) {

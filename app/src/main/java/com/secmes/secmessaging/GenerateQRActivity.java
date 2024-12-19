@@ -185,6 +185,8 @@ public class GenerateQRActivity extends AppCompatActivity {
         Intent intent = new Intent(GenerateQRActivity.this, ChatActivity.class);
         intent.putExtra("IP", clientIpAddress); // Pasar la IP del cliente
         intent.putExtra("PublicKey", clientPublicKey); // Clave pública si es necesario
+        intent.putExtra("PORT", 49153); // Clave pública del cliente
+        intent.putExtra("isServer", false);
 
         startActivity(intent); // Iniciar la actividad de chat
         finish(); // Finalizar la actividad actual para evitar que el usuario regrese a ella

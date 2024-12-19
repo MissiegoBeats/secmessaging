@@ -24,13 +24,14 @@ public class ChatActivity extends AppCompatActivity {
     private TextView chatView;
     private EditText messageInput;
     private Button sendButton;
-    private final int PORT = 12345;
     private String myPublicKey;
     private String myPrivateKey;
     private String recipientPublicKey;
     private String recipientIp;
     private ServerSocket serverSocket;
     private PrintWriter out;
+    private int SERVER_PORT = 49153;
+    private int CLIENT_PORT = 49152;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,14 @@ public class ChatActivity extends AppCompatActivity {
 
         recipientIp = getIntent().getStringExtra("IP");
         recipientPublicKey = getIntent().getStringExtra("PublicKey");
+        int port = getIntent().getIntExtra("PORT", -1);
+        if (port == 49152){
+            SERVER_PORT = 49153;
+            CLIENT_PORT = 49152;
+        }else{
+            CLIENT_PORT = 49153;
+            SERVER_PORT = 49152;
+        }
 
         chatView.append("Mi PK: "+ myPublicKey + "\n");
         chatView.append("PK del destinatario: "+ recipientPublicKey + "\n");
@@ -88,7 +97,7 @@ public class ChatActivity extends AppCompatActivity {
     private void createSocketServer() {
         new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(PORT);
+                serverSocket = new ServerSocket(SERVER_PORT);
                 Socket socket = serverSocket.accept();
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 String message;
@@ -106,7 +115,7 @@ public class ChatActivity extends AppCompatActivity {
     private void createClientSocket() {
         new Thread(() -> {
             try {
-                Socket socket = new Socket(recipientIp, PORT);
+                Socket socket = new Socket(recipientIp, CLIENT_PORT);
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
             } catch (IOException e) {
                 e.printStackTrace();
