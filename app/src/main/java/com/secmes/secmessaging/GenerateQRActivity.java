@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -151,9 +152,11 @@ public class GenerateQRActivity extends AppCompatActivity {
                     Socket clientSocket = serverSocket.accept();
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                     String clientInfo = in.readLine();
+                    Log.d(TAG, "Cliente conectado: " + clientInfo);
                     String[] clientInfoSplit = clientInfo.split(";");
-                    clientIpAddress = (String) clientInfoSplit[0];
-                    clientPublicKey = (String) clientInfoSplit[1];
+                    clientIpAddress = clientInfoSplit[0];
+                    clientPublicKey = URLEncoderUtils.decodeFromUrl(clientInfoSplit[1]);
+
                     Log.d(TAG, "Cliente conectado desde: " + clientIpAddress);
 
                     runOnUiThread(this::connectToChatActivity);

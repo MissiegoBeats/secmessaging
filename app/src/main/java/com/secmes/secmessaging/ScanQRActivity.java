@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -113,7 +114,9 @@ public class ScanQRActivity extends AppCompatActivity {
                         // Crear un socket y conectarse al cliente (IP del QR)
                         Socket socket = new Socket(ipAddress, 12345); // Usamos el puerto que corresponde en el servidor
                         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                        out.println(getDeviceIp()+";"+RSAUtils.getPublicKey());
+                        String encodedPK = URLEncoderUtils.encodeToUrl(RSAUtils.getPublicKey());
+                        Log.d(TAG, "Se envía: " + getDeviceIp()+";"+encodedPK);
+                        out.println(getDeviceIp()+";"+encodedPK);
                         socket.close();
                         Log.d(TAG, "Conexión cerrada con el cliente");
 
