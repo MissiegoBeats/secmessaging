@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -103,7 +104,8 @@ public class ChatActivity extends AppCompatActivity {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 String message;
                 while ((message = in.readLine()) != null) {
-                    String finalMessage = message;
+                    String encryptedMessage = URLEncoderUtils.decodeFromUrl(message);
+                    String finalMessage = RSAUtils.decrypt(encryptedMessage, myPrivateKey);
                     runOnUiThread(() -> chatView.append("Amigo: " + finalMessage + "\n")); // Actualizar UI
                 }
                 socket.close();
@@ -132,7 +134,13 @@ public class ChatActivity extends AppCompatActivity {
         String message = messageInput.getText().toString().trim();
         if (!message.isEmpty() && out != null) {
             new Thread(() -> {
-                out.println(message);
+                String encryptedMmessage = null;
+                try {
+                    encryptedMmessage = URLEncoderUtils.encodeToUrl(RSAUtils.encrypt(message, recipientPublicKey));
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+                out.println(encryptedMmessage);
                 runOnUiThread(() -> chatView.append("Yo: " + message + "\n"));
             }).start();
             messageInput.setText("");
