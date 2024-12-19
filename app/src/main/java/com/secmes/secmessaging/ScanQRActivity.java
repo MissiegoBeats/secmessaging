@@ -1,8 +1,11 @@
 package com.secmes.secmessaging;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,6 +16,10 @@ import androidx.core.content.ContextCompat;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class ScanQRActivity extends AppCompatActivity {
 
@@ -98,13 +105,58 @@ public class ScanQRActivity extends AppCompatActivity {
             // Mostrar la IP y la clave pública en un Toast para verificar
             Toast.makeText(this, "IP: " + ipAddress + "\nPublicKey: " + publicKey, Toast.LENGTH_LONG).show();
 
-            // Iniciar la actividad de chat, pasando la IP y la clave pública
-            Intent intent = new Intent(this, ChatActivity.class);
-            intent.putExtra("IP", ipAddress);
-            intent.putExtra("PublicKey", publicKey);
-            startActivity(intent);
+            // Iniciar un socket para conectarse al otro dispositivo (cliente)
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // Crear un socket y conectarse al cliente (IP del QR)
+                        Socket socket = new Socket(ipAddress, 12345); // Usamos el puerto que corresponde en el servidor
+                        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                        out.println(getDeviceIp()+";"+RSAUtils.getPublicKey());
+                        socket.close();
+                        Log.d(TAG, "Conexión cerrada con el cliente");
+
+                        // Pasar a ChatActivity con la IP y la clave pública
+                        Intent intent = new Intent(ScanQRActivity.this, ChatActivity.class);
+                        intent.putExtra("IP", ipAddress); // Pasar la IP del cliente
+                        intent.putExtra("PublicKey", publicKey);
+                        startActivity(intent);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Error al conectar con el cliente: " + ipAddress);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(ScanQRActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }
+            }).start();
         } else {
             Toast.makeText(this, "QR no válido", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private String getDeviceIp() {
+        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        if (wifiManager != null) {
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            if (wifiInfo != null) {
+                int ipAddressInt = wifiInfo.getIpAddress();
+                return formatIpAddress(ipAddressInt);
+            }
+        }
+        return null;
+    }
+
+    private String formatIpAddress(int ipAddressInt) {
+        return (ipAddressInt & 0xFF) + "." +
+                ((ipAddressInt >> 8) & 0xFF) + "." +
+                ((ipAddressInt >> 16) & 0xFF) + "." +
+                ((ipAddressInt >> 24) & 0xFF);
+    }
+
 }

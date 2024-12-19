@@ -18,9 +18,12 @@ import androidx.core.content.ContextCompat;
 
 import com.google.zxing.WriterException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class GenerateQRActivity extends AppCompatActivity {
@@ -29,10 +32,12 @@ public class GenerateQRActivity extends AppCompatActivity {
     private static final String TAG = "GenerateQRActivity";
 
     private ImageView qrImageView;
-    private String publicKey; // La clave pública que has generado previamente
-    private String ipAddress; // La IP local del dispositivo
+    private String publicKey;
+    private String clientPublicKey;
+    private String ipAddress;
     private ServerSocket serverSocket; // Para escuchar conexiones entrantes
     private CountDownLatch serverSocketLatch = new CountDownLatch(1); // Sincronización para esperar que el servidor se inicie
+    private String clientIpAddress; // IP del cliente conectado
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +52,7 @@ public class GenerateQRActivity extends AppCompatActivity {
             ipAddress = getDeviceIp();
 
             // Obtener la clave pública RSA
-            publicKey = RSAUtils.getPublicKey(); // Asume que ya tienes esta función implementada
+            publicKey = RSAUtils.getPublicKey();
 
             // Si la IP y la clave pública están disponibles, generamos el QR
             if (ipAddress != null && publicKey != null) {
@@ -124,60 +129,60 @@ public class GenerateQRActivity extends AppCompatActivity {
     // Método para inicializar el servidor
     private void startServer() {
         // Iniciar el servidor en un hilo separado
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    serverSocket = new ServerSocket(12345); // Puerto de escucha
-                    Log.d(TAG, "Servidor iniciado, esperando conexión...");
-                    serverSocketLatch.countDown(); // El servidor se ha iniciado correctamente
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Error al iniciar el servidor");
-                    serverSocketLatch.countDown(); // Asegurarnos de que el hilo no quede bloqueado en caso de error
-                }
+        new Thread(() -> {
+            try {
+                serverSocket = new ServerSocket(12345); // Puerto de escucha
+                Log.d(TAG, "Servidor iniciado, esperando conexión...");
+                serverSocketLatch.countDown(); // El servidor se ha iniciado correctamente
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "Error al iniciar el servidor");
+                serverSocketLatch.countDown(); // Asegurarnos de que el hilo no quede bloqueado en caso de error
             }
         }).start();
     }
 
     // Esperar a que se conecte el cliente
     private void waitForConnection() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    serverSocketLatch.await(); // Esperamos a que el servidor se haya inicializado
-                    if (serverSocket != null && !serverSocket.isClosed()) {
-                        Socket clientSocket = serverSocket.accept(); // Espera a una conexión entrante
-                        Log.d(TAG, "Conexión recibida del cliente");
+        new Thread(() -> {
+            try {
+                serverSocketLatch.await();
+                if (serverSocket != null && !serverSocket.isClosed()) {
+                    Socket clientSocket = serverSocket.accept();
+                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    String clientInfo = in.readLine();
+                    String[] clientInfoSplit = clientInfo.split(";");
+                    clientIpAddress = (String) clientInfoSplit[0];
+                    clientPublicKey = (String) clientInfoSplit[1];
+                    Log.d(TAG, "Cliente conectado desde: " + clientIpAddress);
 
-                        // Una vez que se conecta, se puede establecer el canal seguro de comunicación
-                        // Aquí puedes inicializar la comunicación con el cliente
-
-                        // Iniciar ChatActivity con la conexión establecida
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                connectToChatActivity();
-                            }
-                        });
-
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Error al esperar la conexión del cliente");
+                    runOnUiThread(this::connectToChatActivity);
+                    clientSocket.close();
                 }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                Log.e(TAG, "Error al esperar la conexión del cliente");
             }
         }).start();
     }
 
     // Método para mover a la actividad de chat después de generar el QR
     private void connectToChatActivity() {
+        try {
+            // Cerrar la conexión con el cliente si está activa
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Error al cerrar el servidor");
+        }
+
         // Crear un Intent para ir a la actividad de chat
         Intent intent = new Intent(GenerateQRActivity.this, ChatActivity.class);
-        // Pasar información de la IP y la clave pública al ChatActivity si es necesario
-        intent.putExtra("IP", ipAddress);
-        intent.putExtra("PublicKey", publicKey);
+        intent.putExtra("IP", clientIpAddress); // Pasar la IP del cliente
+        intent.putExtra("PublicKey", clientPublicKey); // Clave pública si es necesario
+
         startActivity(intent); // Iniciar la actividad de chat
         finish(); // Finalizar la actividad actual para evitar que el usuario regrese a ella
     }
@@ -206,12 +211,13 @@ public class GenerateQRActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (serverSocket != null && !serverSocket.isClosed()) {
-            try {
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Error al cerrar el servidor en onDestroy");
         }
     }
 }
