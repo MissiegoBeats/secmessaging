@@ -3,27 +3,58 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#f4f4f4">
 
-    <TextView
-        android:id="@+id/chatView"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="8dp"
-        android:scrollbars="vertical"
-        />
+        android:layout_weight="1">
+        <LinearLayout
+            android:id="@+id/chatView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"/>
+    </ScrollView>
 
-    <EditText
-        android:id="@+id/messageInput"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Escribe un mensaje" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <EditText
+            android:id="@+id/messageInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Escribe un mensaje"
+            android:padding="12dp"
+            android:textSize="14sp"
+            android:background="@drawable/edit_text_background"
+            android:textColor="#333333"
+            android:textColorHint="#888888"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/sendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enviar"
+            android:textColor="@color/black"
+            android:background="@drawable/button_background"
+            android:layout_gravity="center_vertical" />
+    </LinearLayout>
 
     <Button
-        android:id="@+id/sendButton"
+        android:id="@+id/setEncryptionVisibilityButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enviar"
-        android:layout_marginTop="8dp" />
+        android:text="Mostrar mensajes\nencriptados"
+        android:textColor="@color/black"
+        android:background="@drawable/button_background"
+        android:layout_gravity="center" />
 </LinearLayout>

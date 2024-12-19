@@ -1,21 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/generateQRButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Generar QR" />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/scanQRButton"
-        android:layout_width="wrap_content"
+        <ImageView
+            android:id="@+id/backgroundImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/background"
+            android:scaleType="centerCrop"
+            android:contentDescription="Fondo" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Escanear QR"
-        android:layout_marginTop="16dp" />
-</LinearLayout>
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:padding="20dp">
+
+        <Button
+            android:id="@+id/generateQRButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Generar QR"
+            android:backgroundTint="@color/black"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:layout_marginBottom="16dp"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="12dp"
+            android:elevation="4dp"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentTop="true"/>
+
+        <Button
+            android:id="@+id/scanQRButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Escanear QR"
+            android:backgroundTint="@color/black"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="12dp"
+            android:elevation="4dp"
+            android:layout_marginTop="16dp"
+            android:layout_centerHorizontal="true"/>
+    </LinearLayout>
+
+</RelativeLayout>

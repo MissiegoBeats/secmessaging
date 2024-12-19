@@ -4,10 +4,11 @@ import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,7 +23,7 @@ import java.net.Socket;
 
 public class ChatActivity extends AppCompatActivity {
 
-    private TextView chatView;
+    private LinearLayout chatView;
     private EditText messageInput;
     private Button sendButton;
     private String myPublicKey;
@@ -33,6 +34,8 @@ public class ChatActivity extends AppCompatActivity {
     private PrintWriter out;
     private int SERVER_PORT = 49153;
     private int CLIENT_PORT = 49152;
+    private boolean seeEncryptedMessages = false;
+    private Button setEncryptionVisibilityButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +43,9 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
 
         chatView = findViewById(R.id.chatView);
-        chatView.setMovementMethod(new ScrollingMovementMethod());
         messageInput = findViewById(R.id.messageInput);
         sendButton = findViewById(R.id.sendButton);
+        setEncryptionVisibilityButton = findViewById(R.id.setEncryptionVisibilityButton);
 
         myPublicKey = RSAUtils.getPublicKey();
         myPrivateKey = RSAUtils.getPrivateKey();
@@ -53,13 +56,15 @@ public class ChatActivity extends AppCompatActivity {
         if (port == 49152){
             SERVER_PORT = 49153;
             CLIENT_PORT = 49152;
-        }else{
+        } else {
             CLIENT_PORT = 49153;
             SERVER_PORT = 49152;
         }
 
-        chatView.append("Mi PK: "+ myPublicKey + "\n");
-        chatView.append("PK del destinatario: "+ recipientPublicKey + "\n\n");
+        chatView.setPadding(16, 8, 16, 8);
+
+        chatView.addView(createMessageTextView("Mi PK: "+ myPublicKey, false));
+        chatView.addView(createMessageTextView("PK del destinatario: "+ recipientPublicKey, false));
 
         if (recipientIp != null && recipientPublicKey != null) {
             new Thread(() -> establishConnection()).start();
@@ -69,31 +74,23 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         sendButton.setOnClickListener(view -> sendMessage());
+
+        setEncryptionVisibilityButton.setOnClickListener(view -> setEncryptionVisibility());
     }
 
     private void establishConnection() {
         createSocketServer();
         createClientSocket();
-        chatView.append("INFO: ESTAS EN UN CHAT SEGURO CON TU AMIGO\n\n");
+        runOnUiThread(() -> chatView.addView(createMessageTextView("INFO: ESTAS EN UN CHAT SEGURO CON TU AMIGO", false)));
     }
 
-    private String getDeviceIp() {
-        WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        if (wifiManager != null) {
-            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            if (wifiInfo != null) {
-                int ipAddressInt = wifiInfo.getIpAddress();
-                return formatIpAddress(ipAddressInt);
-            }
+    private void setEncryptionVisibility() {
+        seeEncryptedMessages = !seeEncryptedMessages;
+        if (seeEncryptedMessages) {
+            setEncryptionVisibilityButton.setText("Ocultar mensajes\nencriptados");
+        } else {
+            setEncryptionVisibilityButton.setText("Mostrar mensajes\nencriptados");
         }
-        return null;
-    }
-
-    private String formatIpAddress(int ipAddressInt) {
-        return (ipAddressInt & 0xFF) + "." +
-                ((ipAddressInt >> 8) & 0xFF) + "." +
-                ((ipAddressInt >> 16) & 0xFF) + "." +
-                ((ipAddressInt >> 24) & 0xFF);
     }
 
     private void createSocketServer() {
@@ -104,9 +101,14 @@ public class ChatActivity extends AppCompatActivity {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 String message;
                 while ((message = in.readLine()) != null) {
-                    String encryptedMessage = URLEncoderUtils.decodeFromUrl(message);
-                    String finalMessage = RSAUtils.decrypt(encryptedMessage, myPrivateKey);
-                    runOnUiThread(() -> chatView.append("Amigo: " + finalMessage + "\n")); // Actualizar UI
+                    if (!seeEncryptedMessages) {
+                        String encryptedMessage = URLEncoderUtils.decodeFromUrl(message);
+                        String finalMessage = RSAUtils.decrypt(encryptedMessage, myPrivateKey);
+                        runOnUiThread(() -> chatView.addView(createMessageTextView("Amigo: " + finalMessage, false)));
+                    } else {
+                        String encryptedMessage = URLEncoderUtils.decodeFromUrl(message);
+                        runOnUiThread(() -> chatView.addView(createMessageTextView("Amigo (Encriptado): " + encryptedMessage, false)));
+                    }
                 }
                 socket.close();
             } catch (IOException e) {
@@ -134,19 +136,55 @@ public class ChatActivity extends AppCompatActivity {
         String message = messageInput.getText().toString().trim();
         if (!message.isEmpty() && out != null) {
             new Thread(() -> {
-                String encryptedMmessage = null;
+                String encryptedMessage = null;
                 try {
-                    encryptedMmessage = URLEncoderUtils.encodeToUrl(RSAUtils.encrypt(message, recipientPublicKey));
+                    encryptedMessage = URLEncoderUtils.encodeToUrl(RSAUtils.encrypt(message, recipientPublicKey));
                 } catch (UnsupportedEncodingException e) {
                     throw new RuntimeException(e);
                 }
-                out.println(encryptedMmessage);
-                runOnUiThread(() -> chatView.append("Yo: " + message + "\n"));
+                out.println(encryptedMessage);
+                if(!seeEncryptedMessages) {
+                    runOnUiThread(() -> chatView.addView(createMessageTextView("Yo: " + message, true)));
+                }else{
+                    try {
+                        String finalEncryptedMessage = URLEncoderUtils.decodeFromUrl(encryptedMessage);
+                        runOnUiThread(() -> chatView.addView(createMessageTextView("Yo (Encriptado): " + finalEncryptedMessage, true)));
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }).start();
             messageInput.setText("");
         } else {
             Toast.makeText(this, "No se puede enviar el mensaje", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private TextView createMessageTextView(String message, boolean sent) {
+        TextView textView = new TextView(this);
+        textView.setText(message);
+        textView.setTextSize(14);
+        textView.setTextColor(getResources().getColor(android.R.color.black));
+        textView.setPadding(16, 12, 16, 12);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        if (sent) {
+            textView.setGravity(Gravity.START);
+            textView.setBackgroundResource(R.drawable.message_sent_background);
+            params.setMargins(50, 8, 16, 8);
+        } else {
+            textView.setGravity(Gravity.START);
+            textView.setBackgroundResource(R.drawable.message_received_background);
+            params.setMargins(50, 8, 16, 8);
+        }
+
+        textView.setLayoutParams(params);
+
+        return textView;
     }
 
     @Override
