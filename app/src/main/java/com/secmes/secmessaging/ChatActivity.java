@@ -58,7 +58,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         chatView.append("Mi PK: "+ myPublicKey + "\n");
-        chatView.append("PK del destinatario: "+ recipientPublicKey + "\n");
+        chatView.append("PK del destinatario: "+ recipientPublicKey + "\n\n");
 
         if (recipientIp != null && recipientPublicKey != null) {
             new Thread(() -> establishConnection()).start();
@@ -73,6 +73,7 @@ public class ChatActivity extends AppCompatActivity {
     private void establishConnection() {
         createSocketServer();
         createClientSocket();
+        chatView.append("INFO: ESTAS EN UN CHAT SEGURO CON TU AMIGO\n\n");
     }
 
     private String getDeviceIp() {
