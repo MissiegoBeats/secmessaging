@@ -1,5 +1,5 @@
 ![logo](LOGO.jpg)
-# Secure Messaging App
+# Secure Chat
 
 Una aplicación de mensajería segura que utiliza cifrado RSA para garantizar la privacidad de las comunicaciones. La aplicación permite a los usuarios intercambiar mensajes cifrados y visualizarlos de manera intuitiva y moderna.
 
