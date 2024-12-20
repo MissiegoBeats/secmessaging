@@ -21,6 +21,8 @@ Una aplicación de mensajería segura que utiliza cifrado RSA para garantizar la
 4. Asegúrate de habilitar el uso de RenderScript si utilizas el desenfoque de fondo.
 5. Ejecutar para instalar en el dispositivo
 
+Nota: En un próximo release, se podrá descargar directamente el .apk file
+
 ## 📝 Uso
 1. Generación de claves RSA: Al iniciar la aplicación, se generan automáticamente claves pública y privada.
 2. Intercambio de claves públicas: Utiliza la funcionalidad de generación y escaneo de códigos QR para intercambiar claves públicas con otros usuarios.
