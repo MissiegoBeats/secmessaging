@@ -35,4 +35,4 @@ Nota: En un próximo release, se podrá descargar directamente el .apk file
 2. Codificación URL: Para garantizar la compatibilidad, los mensajes cifrados se codifican como cadenas URL.
 
 ## 📜 Licencia
-Este proyecto está bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles
+Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles
