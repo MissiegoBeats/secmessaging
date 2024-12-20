@@ -14,7 +14,7 @@ Una aplicación de mensajería segura que utiliza cifrado RSA para garantizar la
 
 1. Clona este repositorio en tu máquina local:
    ```bash
-   git clone https://github.com/tu-usuario/secure-messaging-app.git
+   git clone https://github.com/MissiegoBeats/secmessaging.git
    ```
 2. Abre el proyecto en Android Studio.
 3. Descarga e instala las dependencias requeridas en el archivo build.gradle.
