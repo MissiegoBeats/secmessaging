@@ -1,3 +1,4 @@
+![logo](logo.jpg)
 # Secure Messaging App
 
 Una aplicación de mensajería segura que utiliza cifrado RSA para garantizar la privacidad de las comunicaciones. La aplicación permite a los usuarios intercambiar mensajes cifrados y visualizarlos de manera intuitiva y moderna.
